@@ -1,0 +1,4 @@
+[ExtraTrees Regressor]
+R2 Score : 0.9730
+MAE       : 30.7200
+RMSE      : 78.5652
