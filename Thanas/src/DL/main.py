@@ -15,10 +15,10 @@ from category_encoders import TargetEncoder
 # Configuration
 load_processed = False  # Set to True to load preprocessed data
 n_components = 0.99  # Fixed for PCA
-batch_size = 16  # Optimized for CPU speed
-epochs = 500
+batch_size = 512  # Optimized for CPU speed
+epochs = 50
 validation_split = 0.2
-sample_fraction = 0.01  # Full dataset
+sample_fraction = 1  # Full dataset
 random_state = 42
 
 # Function to preprocess target
@@ -138,16 +138,22 @@ print(f"X_train shape: {X_train.shape}, y_train shape: {y_train.shape}")
 # Build the neural network
 model = tf.keras.Sequential([
     tf.keras.layers.Input(shape=(X_train.shape[1],)),
-    tf.keras.layers.Dense(256, activation='gelu', kernel_regularizer=tf.keras.regularizers.l2(0.005)),
+    tf.keras.layers.Dense(2**12, activation='gelu', kernel_regularizer=tf.keras.regularizers.l2(0.005)),
     tf.keras.layers.BatchNormalization(),
     tf.keras.layers.Dropout(0.1),
-    tf.keras.layers.Dense(128, activation='gelu', kernel_regularizer=tf.keras.regularizers.l2(0.005)),
+    tf.keras.layers.Dense(2**11, activation='gelu', kernel_regularizer=tf.keras.regularizers.l2(0.005)),
     tf.keras.layers.BatchNormalization(),
     tf.keras.layers.Dropout(0.1),
-    tf.keras.layers.Dense(64, activation='gelu', kernel_regularizer=tf.keras.regularizers.l2(0.005)),
+    tf.keras.layers.Dense(2**10, activation='gelu', kernel_regularizer=tf.keras.regularizers.l2(0.005)),
     tf.keras.layers.BatchNormalization(),
     tf.keras.layers.Dropout(0.1),
-    tf.keras.layers.Dense(32, activation='gelu', kernel_regularizer=tf.keras.regularizers.l2(0.005)),
+    tf.keras.layers.Dense(2**9, activation='gelu', kernel_regularizer=tf.keras.regularizers.l2(0.005)),
+    tf.keras.layers.BatchNormalization(),
+    tf.keras.layers.Dropout(0.1),
+    tf.keras.layers.Dense(2**8, activation='gelu', kernel_regularizer=tf.keras.regularizers.l2(0.005)),
+    tf.keras.layers.BatchNormalization(),
+    tf.keras.layers.Dropout(0.1),
+    tf.keras.layers.Dense(2**7, activation='gelu', kernel_regularizer=tf.keras.regularizers.l2(0.005)),
     tf.keras.layers.BatchNormalization(),
     tf.keras.layers.Dropout(0.1),
     tf.keras.layers.Dense(1, dtype='float32')
