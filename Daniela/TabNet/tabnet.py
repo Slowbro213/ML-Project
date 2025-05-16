@@ -6,8 +6,6 @@ os.makedirs("/root/.kaggle", exist_ok=True)
 #!mv kaggle.json /root/.kaggle/
 #!chmod 600 /root/.kaggle/kaggle.json
 #!kaggle datasets download -d salehahmedrony/global-food-prices
-import matplotlib.pyplot as plt
-from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
 with zipfile.ZipFile("global-food-prices.zip", 'r') as zip_ref:
     zip_ref.extractall("food_prices_data")
@@ -15,16 +13,28 @@ with zipfile.ZipFile("global-food-prices.zip", 'r') as zip_ref:
 # ========== 2. Install TabNet Dependencies ==========
 #!pip install pytorch-tabnet category_encoders
 
-# ========== 3. Load and Preprocess Data ==========
+# ========== 3. Load and Preprocess Data with Outlier Removal ==========
 import pandas as pd
 
 df = pd.read_csv("/content/food_prices_data/wfp_food_prices_database.csv", low_memory=False)
 
+# Drop rows with missing target
 df = df.dropna(subset=['mp_price'])
-df = df[[  # Select relevant columns
+
+# Remove outliers in target using IQR
+Q1 = df['mp_price'].quantile(0.25)
+Q3 = df['mp_price'].quantile(0.75)
+IQR = Q3 - Q1
+lower_bound = Q1 - 1.5 * IQR
+upper_bound = Q3 + 1.5 * IQR
+df = df[(df['mp_price'] >= lower_bound) & (df['mp_price'] <= upper_bound)]
+
+# Keep only relevant columns
+df = df[[  
     'adm0_name', 'adm1_name', 'mkt_name', 'cm_name',
     'cur_name', 'pt_name', 'um_name', 'mp_month', 'mp_year', 'mp_price'
 ]].dropna()
+
 
 # ========== 4. Encode Categoricals with OrdinalEncoder ==========
 from category_encoders import OrdinalEncoder
@@ -65,17 +75,25 @@ tabnet.fit(
     batch_size=1024, virtual_batch_size=128
 )
 
+
+
+
+import matplotlib.pyplot as plt
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+
+# ========== 1. Predict & Evaluate ==========
 y_pred = tabnet.predict(X_test_np).flatten()
 
 rmse = np.sqrt(mean_squared_error(y_test, y_pred))
 mae = mean_absolute_error(y_test, y_pred)
 r2 = r2_score(y_test, y_pred)
 
-print(f"\nTabNet Evaluation")
-print(f"RMSE: {rmse:.2f}")
-print(f"MAE : {mae:.2f}")
-print(f"R²  : {r2:.4f}")
+print(f"\n📊 TabNet Evaluation")
+print(f"✅ RMSE: {rmse:.2f}")
+print(f"✅ MAE : {mae:.2f}")
+print(f"✅ R²  : {r2:.4f}")
 
+# ========== 2. Log Scale Scatter Plot with Metrics ==========
 plt.figure(figsize=(6, 6))
 plt.scatter(y_test, y_pred, alpha=0.3)
 plt.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 'r--')
@@ -98,4 +116,3 @@ plt.text(
 
 plt.tight_layout()
 plt.show()
-
